@@ -1,7 +1,7 @@
 ---
 title: "Week 6"
 author: "Shraddha Somani"
-date: "7/28/2019"
+date: "6/11/2019"
 output: html_document
 ---
 
@@ -9,22 +9,111 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+## Data Transformation
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r nycflights13}
+library(nycflights13)
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r tidyverse}
+library(tidyverse)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+To do data manipulation we are using flights data
+
+## Filter
+
+```{r flights}
+flights
+# select all flights for January 1
+(jan1 <- filter(flights, month == 1, day == 1))
+# select all flights for november december
+(nov_dec <- filter(flights, month %in% c(11, 12))) 
+# De-Morgan's Law
+filter(flights, !(arr_delay > 120 | dep_delay > 120))
+filter(flights, arr_delay <= 120, dep_delay <= 120)
+```
+
+## Arange Rows
+arrange works similarly to filter instead of selecting rows, it changes their order
+
+```{r}
+arrange(flights, year, month, day)
+arrange(flights, desc(dep_delay))
+```
+
+## Select
+It helps in narrowing in on the variables we’re actually interested in
+
+```{r}
+# Select columns by name
+select(flights, year, month, day)
+# Select all columns from year to day
+select(flights, year:day)
+# Select all columns minus from year to day
+select(flights, -(year:day))
+# Rename a variable
+rename(flights, tail_num = tailnum)
+# Everything is useful if we have few variables and we would like to move to the start of data frame
+select(flights, time_hour, air_time, everything())
+```
+
+## Mutate
+Adding new variable with mutate. Columns are always added in the end of dataset
+
+```{r}
+# Select data set
+flights_sml <- select(flights, year:day, ends_with("delay"), distance, air_time )
+# Mutate
+mutate(flights_sml, gain = dep_delay - arr_delay, speed = distance / air_time * 60)
+mutate(flights_sml, gain = dep_delay - arr_delay, hours = air_time / 60, gain_per_hour = gain / hours)
+# If we only want new variables
+transmute(flights, gain = dep_delay - arr_delay, hours = air_time / 60, gain_per_hour = gain / hours)
+# transmutate with modular function
+transmute(flights, dep_time, hour = dep_time %/% 100, minute = dep_time %% 100)
+```
+
+## Summaries
+```{r}
+# summarise with group by is highly useful
+by_day <- group_by(flights, year, month, day)
+summarise(by_day, delay = mean(dep_delay, na.rm = TRUE))
+# Combining multiple operations with pipe
+delays <- flights %>% group_by(dest) %>% summarise( count = n(), dist = mean(distance, na.rm = TRUE), delay = mean(arr_delay, na.rm = TRUE)) %>%filter(count > 20, dest != "HNL")
+# Missing Values
+not_cancelled <- flights %>% filter(!is.na(dep_delay), !is.na(arr_delay))
+not_cancelled %>% group_by(year, month, day) %>% summarise(mean = mean(dep_delay))
+# Planes with highest average delays
+delays <- not_cancelled %>% group_by(tailnum) %>% summarise(delay = mean(arr_delay))
+ggplot(data = delays, mapping = aes(x = delay)) + geom_freqpoly(binwidth = 10)
+# Useful summary functions like mean meadian min max
+not_cancelled %>% group_by(year, month, day) %>% summarise(avg_delay1 = mean(arr_delay),avg_delay2 = mean(arr_delay[arr_delay > 0]))
+# Standard Deviation
+not_cancelled %>% group_by(dest) %>% summarise(distance_sd = sd(distance)) %>% arrange(desc(distance_sd))
+# Min Max to measure Rank
+not_cancelled %>% group_by(year, month, day) %>% summarise(first = min(dep_time),last = max(dep_time))
+# destinations with most carriers
+not_cancelled %>% group_by(dest) %>% summarise(carriers = n_distinct(carrier)) %>%  arrange(desc(carriers))
+# Count for destination
+not_cancelled %>% count(dest)
+# Grouping of multiple variables
+daily <- group_by(flights, year, month, day)
+(per_day   <- summarise(daily, flights = n()))
+(per_month <- summarise(per_day, flights = sum(flights)))
+# Ungrouping
+daily %>% ungroup() %>% summarise(flights = n())
+```
+
+## Grouped Mutate
+We vcan use mutate with filter
+
+```{r}
+# Worst member of each group
+flights_sml %>% group_by(year, month, day) %>% filter(rank(desc(arr_delay)) < 10)
+# Groups bigger than threshold
+(popular_dests <- flights %>% group_by(dest) %>% filter(n() > 365))
+# Standardised per group metrics
+popular_dests %>% filter(arr_delay > 0) %>% mutate(prop_delay = arr_delay / sum(arr_delay)) %>% select(year:day, dest, arr_delay, prop_delay)
+```
+
+

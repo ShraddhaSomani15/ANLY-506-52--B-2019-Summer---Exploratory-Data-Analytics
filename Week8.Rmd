@@ -1,0 +1,12 @@
+---
+title: "Week8"
+author: "Shraddha Somani"
+date: "6/25/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Mid-Term

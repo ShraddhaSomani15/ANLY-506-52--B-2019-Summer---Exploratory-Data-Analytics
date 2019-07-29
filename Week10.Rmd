@@ -1,0 +1,124 @@
+---
+title: "Week10"
+author: "Shraddha Somani"
+date: "7/09/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Clustering
+
+```{r packages}
+library(tidyverse)
+library(cluster)
+library(factoextra)
+library(gridExtra)
+library(dendextend)
+```
+
+To do data manipulation we are using USArrests Data
+
+```{r USArrests}
+df <- USArrests
+# Remove missing value
+df <- na.omit(df)
+# standardize/scale data because we dont want clustering algo to depend on arbitrary value
+df <- scale(df)
+head(df)
+```
+
+## K Means clustering
+Center means number of cluster and nstart meansnumber of configuration
+
+```{r}
+k2 <- kmeans(df, centers = 2, nstart = 25)
+str(k2)
+k2
+# visualize cluster
+fviz_cluster(k2, data = df)
+# If more than 2 dimensions fviz_cluster will do PCA
+# we can also do scatter plot
+df %>% as_tibble() %>% mutate(cluster = k2$cluster, state = row.names(USArrests)) %>% ggplot(aes(UrbanPop, Murder, color = factor(cluster), label = state)) + geom_text()
+```
+
+## Cluster comparison
+we can change centers and compare the cluster
+
+```{r}
+k3 <- kmeans(df, centers = 3, nstart = 25)
+k4 <- kmeans(df, centers = 4, nstart = 25)
+k5 <- kmeans(df, centers = 5, nstart = 25)
+# plots to compare
+p1 <- fviz_cluster(k2, geom = "point", data = df) + ggtitle("k = 2")
+p2 <- fviz_cluster(k3, geom = "point",  data = df) + ggtitle("k = 3")
+p3 <- fviz_cluster(k4, geom = "point",  data = df) + ggtitle("k = 4")
+p4 <- fviz_cluster(k5, geom = "point",  data = df) + ggtitle("k = 5")
+# Lets arrange multiple plots side by side
+grid.arrange(p1, p2, p3, p4, nrow = 2)
+```
+
+## Optimal Cluster
+There are different ways to find optimal number of cluster
+
+```{r}
+set.seed(123)
+# elbow method
+# since bent appears to be on 4 optimal number of cluster is 4
+fviz_nbclust(df, kmeans, method = "wss")
+# Average silhoutee method
+# It shows 2 as cluster choice 
+fviz_nbclust(df, kmeans, method = "silhouette")
+# Gap Statistics Method shows 4 as optimal cluster size
+gap_stat <- clusGap(df, FUN = kmeans, nstart = 25, K.max = 10, B = 50)
+fviz_gap_stat(gap_stat)
+```
+
+## Compute result with 4 cluster
+```{r}
+set.seed(123)
+final <- kmeans(df, 4, nstart = 25)
+print(final)
+fviz_cluster(final, data = df)
+```
+
+## Hierarchical Clustering
+There are 2 type AGNES and DIANA
+
+# Agglomerative clustering (AGNES)
+```{r}
+# Hclust function
+# Dissimilarity matrix
+d <- dist(df, method = "euclidean")
+# Hierarchical clustering using Complete Linkage
+hc1 <- hclust(d, method = "complete" )
+# Plot the obtained dendrogram
+plot(hc1, cex = 0.6, hang = -1)
+# Agnes function in this we get agglomerative coefficient which measure amount of clustering structure
+hc2 <- agnes(df, method = "complete")
+# Agglomerative coefficient
+hc2$ac
+# This helps us to find stronger clustering method
+# check different methods
+m <- c( "average", "single", "complete", "ward")
+names(m) <- c( "average", "single", "complete", "ward")
+# compute coefficient
+ac <- function(x) {agnes(df, method = x)$ac}
+map_dbl(m, ac)
+# Plot agnes dendogram
+hc3 <- agnes(df, method = "ward")
+pltree(hc3, cex = 0.6, hang = -1, main = "Dendrogram of agnes") 
+```
+
+# Diana Clustering
+
+```{r}
+# Diana clustering
+hc4 <- diana(df)
+# Divise coefficient
+hc4$dc
+# plot dendrogram
+pltree(hc4, cex = 0.6, hang = -1, main = "Dendrogram of diana")
+```

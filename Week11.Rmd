@@ -1,0 +1,54 @@
+---
+title: "Week11"
+author: "Shraddha Somani"
+date: "7/16/2019"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r devtools}
+library(devtools)
+install_github("vqv/ggbiplot")
+```
+
+```{r ggbiplopt}
+library(ggbiplot)
+```
+
+
+## PCA
+Principal Components are the underlying structure in data. 
+They are the directions where there is most variance, the directions where the data is most spread out
+
+```{r mtcars}
+mtcars
+# We will exclude to categorical variables vs and am 
+# we will also set center and scale to true to have peak at PCA object
+mtcars.pca <- prcomp(mtcars[,c(1:7,10,11)], center = TRUE,scale. = TRUE)
+summary(mtcars.pca)
+# We can see PC1 explains 62.8 % of total variance whereas PC@ explainds 23%
+# with these 2 variable we can get 86% of total variance
+str(mtcars.pca)
+```
+
+## Visualize PCA
+
+```{r}
+ggbiplot(mtcars.pca)
+# assign Rownames
+ggbiplot(mtcars.pca, labels=rownames(mtcars))
+# Putting result into categories
+mtcars.country <- c(rep("Japan", 3), rep("US",4), rep("Europe", 7),rep("US",3), "Europe", rep("Japan", 3), rep("US",4), rep("Europe", 3), "US", rep("Europe", 3))
+ggbiplot(mtcars.pca,ellipse=TRUE,  labels=rownames(mtcars), groups=mtcars.country)
+# Plot PC3 and PC4
+ggbiplot(mtcars.pca,ellipse=TRUE,choices=c(3,4),   labels=rownames(mtcars), groups=mtcars.country)
+# there are different ways to play with biplot we can put circle in the middle or scale the plot
+ggbiplot(mtcars.pca,ellipse=TRUE,obs.scale = 1, var.scale = 1,  labels=rownames(mtcars), groups=mtcars.country)
+# cutomize biplot like adding title, theme, color
+ggbiplot(mtcars.pca,ellipse=TRUE,obs.scale = 1, var.scale = 1,  labels=rownames(mtcars), groups=mtcars.country) + scale_colour_manual(name="Origin", values= c("forest green", "red3", "dark blue")) + ggtitle("PCA of mtcars dataset") + theme_minimal()+ theme(legend.position = "bottom")
+# We can also add new data to existing data set and do analysis again
+```

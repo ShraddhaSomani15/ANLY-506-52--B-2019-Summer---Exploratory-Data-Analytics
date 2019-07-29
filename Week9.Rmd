@@ -1,0 +1,43 @@
+---
+title: "Week9"
+author: "Shraddha Somani"
+date: "7/02/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Data Transformation
+
+
+```{r datasets}
+library(datasets)
+```
+
+```{r faithful}
+# plot appear on screen device
+with(faithful, plot(eruptions, waiting)) 
+# Add title
+title(main = "Old Faithful Geyser data")
+# Plot gets saved in pdf 
+# Open PDF device
+pdf(file = "myplot.pdf")  
+# Create plot and send to a file
+with(faithful, plot(eruptions, waiting))  
+# add title nothing will appear on screen
+title(main = "Old Faithful Geyser data")
+# Close PDF file device
+dev.off()
+```
+
+## Copying plot
+
+```{r}
+# Lets copy to png file
+with(faithful, plot(eruptions, waiting))
+title(main = "Old Faithful Geyser data") 
+dev.copy(png, file = "geyserplot.png")
+dev.off()
+```

@@ -1,0 +1,145 @@
+---
+title: "Week7"
+author: "Shraddha Somani"
+date: "6/18/2019"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Data Visualization
+
+```{r tidyverse}
+library(tidyverse)
+```
+
+```{r ggplopt2}
+library(ggplot2)
+```
+
+To do data visualization we are using mpg data
+
+## Creating ggplot
+
+```{r mpg}
+mpg
+ggplot(data = mpg) + geom_point(mapping = aes(x = displ, y = hwy))
+```
+
+```{r mapdata}
+library(mapdata)
+```
+
+## Aesthetic mapping
+We can do changes in color shape size of variables while plotting
+
+```{r}
+# Color to point different class of car
+ggplot(data = mpg) + geom_point(mapping = aes(x = displ, y = hwy, color = class))
+# Size to map class will give warning because of mapping an unordered variable to ordered variable
+ggplot(data = mpg) + geom_point(mapping = aes(x = displ, y = hwy, size = class))
+# Alpha aesthetioc for transparency
+ggplot(data = mpg) + geom_point(mapping = aes(x = displ, y = hwy, alpha = class))
+# Shape aesthetic to control shape of the points
+ggplot(data = mpg) + geom_point(mapping = aes(x = displ, y = hwy, shape = class))
+# We can also set aesthetic manually like here color is set to red
+ggplot(data = mpg) + geom_point(mapping = aes(x = displ, y = hwy), color = "red")
+```
+
+## Common Problem
+common problem when creating ggplot is + in wrong place
+
+```{r}
+## ggplot(data = mpg) + geom_point(mapping = aes(x = displ, y = hwy))
+```
+
+## Facets
+Another way to add variable is to split your plot into facets, subplots that each display one subset of the data.
+
+```{r}
+# Facet_wrap to facet plot by a single variable
+ggplot(data = mpg) + geom_point(mapping = aes(x = displ, y = hwy)) + facet_wrap(~ class, nrow = 2)
+# Facet plot on combination of 2 variables
+ggplot(data = mpg) + geom_point(mapping = aes(x = displ, y = hwy)) + facet_grid(drv ~ cyl)
+```
+
+## Geometric Objects
+We can change geometric objects as well there are over 30 geom available
+
+```{r}
+# Point Geom
+ggplot(data = mpg) + geom_point(mapping = aes(x = displ, y = hwy))
+# Smooth Geom: a smooth line fitted to the data
+ggplot(data = mpg) + geom_smooth(mapping = aes(x = displ, y = hwy))
+# We can even change the line type
+ggplot(data = mpg) + geom_smooth(mapping = aes(x = displ, y = hwy, linetype = drv))
+# We can change legend as well which will give multiple smooth line
+ggplot(data = mpg) + geom_smooth(mapping = aes(x = displ, y = hwy, color = drv), show.legend = FALSE)
+# We can also add multiple geom to same plot
+ggplot(data = mpg) + geom_point(mapping = aes(x = displ, y = hwy)) + geom_smooth(mapping = aes(x = displ, y = hwy))
+# We can use same approach for class data changing aesthetics and everything
+ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) + geom_point(mapping = aes(color = class)) + geom_smooth(data = filter(mpg, class == "subcompact"), se = FALSE)
+```
+
+## Statistical Transformation
+
+
+```{r diamonds}
+# Bar chart for diamond dataset grouped on cut
+ggplot(data = diamonds) + geom_bar(mapping = aes(x = cut))
+# Algorithim used is statistical so we can use stat count as well
+ggplot(data = diamonds) + stat_count(mapping = aes(x = cut))
+# map height of the bars to the raw values of y variable 
+#stat of geom bar is changed from default to identity
+demo <- tribble(
+  ~cut,         ~freq,
+  "Fair",       1610,
+  "Good",       4906,
+  "Very Good",  12082,
+  "Premium",    13791,
+  "Ideal",      21551
+)
+ggplot(data = demo) + geom_bar(mapping = aes(x = cut, y = freq), stat = "identity")
+# Overide the default mapping with transformed variables
+ggplot(data = diamonds) + geom_bar(mapping = aes(x = cut, y = ..prop.., group = 1))
+# stat summary to draw attention to statistical tranformation
+ggplot(data = diamonds) + stat_summary(mapping = aes(x = cut, y = depth),fun.ymin = min, fun.ymax = max,fun.y = median)
+```
+
+## Position adjustment
+We can change color of a bar char or do other aethetic changes
+
+```{r}
+ggplot(data = diamonds) + geom_bar(mapping = aes(x = cut, colour = cut))
+ggplot(data = diamonds) + geom_bar(mapping = aes(x = cut, fill = cut))
+# Multiple variable stacking
+ggplot(data = diamonds) + geom_bar(mapping = aes(x = cut, fill = clarity))
+# Position change of stacking to see overlapping
+ggplot(data = diamonds, mapping = aes(x = cut, fill = clarity)) + geom_bar(alpha = 1/5, position = "identity")
+ggplot(data = diamonds, mapping = aes(x = cut, colour = clarity)) + geom_bar(fill = NA, position = "identity")
+# Dodge places overlapping object beside each other
+ggplot(data = diamonds) + geom_bar(mapping = aes(x = cut, fill = clarity), position = "dodge")
+```
+
+## Coordinate system
+We can change the coordinates as well although default is cartesian
+
+```{r}
+ggplot(data = mpg, mapping = aes(x = class, y = hwy)) + geom_boxplot()
+# coordinate change
+ggplot(data = mpg, mapping = aes(x = class, y = hwy)) + geom_boxplot() + coord_flip()
+# Coord quick map helps setting aspect ratio perfectly
+nz <- map_data("nz")
+ggplot(nz, aes(long, lat, group = group)) + geom_polygon(fill = "white", colour = "black")
+ggplot(nz, aes(long, lat, group = group)) + geom_polygon(fill = "white", colour = "black") + coord_quickmap()
+# coord polar is used for polar coordinateswhich reveals connection between bar chart and coxcomb chart
+bar <- ggplot(data = diamonds) + geom_bar(mapping = aes(x = cut, fill = cut), show.legend = FALSE, width = 1) + theme(aspect.ratio = 1) + labs(x = NULL, y = NULL)
+bar + coord_flip()
+bar + coord_polar()
+```
+
+
+
