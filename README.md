@@ -3,4 +3,4 @@
 #### Week 1 was done in class and datacamp
 #### Week 8 was midterm
 #### I have used R studio to perfor the analysis
-#### Various datasets from cran public repository were used
+#### Various datasets from cran and public repository were used
